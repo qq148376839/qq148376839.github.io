@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>领取卡券</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px 24px;
+    margin: 16px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .icon { font-size: 48px; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin-bottom: 8px; font-weight: 600; }
+  .subtitle { font-size: 14px; color: #888; margin-bottom: 24px; }
+  .status { font-size: 14px; color: #666; margin-bottom: 20px; }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 12px;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: #07c160;
+    color: #fff;
+  }
+  .btn-secondary {
+    background: #f2f2f2;
+    color: #333;
+  }
+  .tips {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+    font-size: 12px;
+    color: #999;
+    text-align: left;
+    line-height: 1.8;
+  }
+  .error { color: #e64340; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 加载中 -->
+  <div id="loading">
+    <div class="icon">🏊</div>
+    <h1>正在跳转到小程序...</h1>
+    <p class="subtitle">请稍候</p>
+  </div>
+
+  <!-- 跳转失败时显示 -->
+  <div id="fallback" class="hidden">
+    <div class="icon">🏊</div>
+    <h1>领取卡券</h1>
+    <p class="subtitle">腾小宝送你一张票</p>
+
+    <p class="status" id="status-text">自动跳转未成功，请手动操作：</p>
+
+    <!-- 方案1: 直接尝试打开 scheme -->
+    <a id="btn-open" class="btn btn-primary" href="#">打开小程序领取</a>
+
+    <!-- 方案2: 复制链接 -->
+    <button id="btn-copy" class="btn btn-secondary" onclick="copyPath()">复制小程序路径</button>
+
+    <div class="tips">
+      <strong>如果点击"打开小程序"无反应：</strong><br>
+      1. 点击右上角 <strong>⋯</strong> → <strong>在浏览器中打开</strong><br>
+      2. 在外部浏览器中会自动跳转到微信小程序<br><br>
+      <strong>如果使用"复制路径"：</strong><br>
+      1. 打开微信，搜索「未来荟」小程序<br>
+      2. 进入后联系客服提供此路径即可领取
+    </div>
+  </div>
+
+  <!-- 参数错误 -->
+  <div id="error-view" class="hidden">
+    <div class="icon">⚠️</div>
+    <h1 class="error">链接无效</h1>
+    <p class="subtitle">缺少必要参数，请联系分享者重新生成</p>
+  </div>
+</div>
+
+<script>
+  var APPID = 'wx020209beec4251e0';
+  var PAGE = 'pages/biz/cardCase/cardShare';
+  var ENV = 'release';
+
+  // 解析 URL 参数
+  var params = new URLSearchParams(window.location.search);
+  var uuid = params.get('uuid');
+  var card = params.get('card');
+
+  if (!uuid) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('error-view').classList.remove('hidden');
+  } else {
+    // 构造 URL Scheme
+    var query = 'checkCardAssignPreUuid=' + uuid + (card ? '&cardUuid=' + card : '');
+    var scheme = 'weixin://dl/business/?appid=' + APPID
+      + '&path=' + encodeURIComponent(PAGE)
+      + '&query=' + encodeURIComponent(query)
+      + '&env_version=' + ENV;
+
+    var miniPath = PAGE + '?' + query;
+
+    // 设置按钮链接
+    document.getElementById('btn-open').href = scheme;
+
+    // 尝试自动跳转
+    window.location.href = scheme;
+
+    // 2秒后如果还在此页面，显示手动操作界面
+    setTimeout(function() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('fallback').classList.remove('hidden');
+    }, 2000);
+  }
+
+  function copyPath() {
+    var text = PAGE + '?checkCardAssignPreUuid=' + uuid + (card ? '&cardUuid=' + card : '');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        document.getElementById('btn-copy').textContent = '已复制!';
+        setTimeout(function() {
+          document.getElementById('btn-copy').textContent = '复制小程序路径';
+        }, 2000);
+      });
+    } else {
+      // fallback
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      document.getElementById('btn-copy').textContent = '已复制!';
+      setTimeout(function() {
+        document.getElementById('btn-copy').textContent = '复制小程序路径';
+      }, 2000);
+    }
+  }
+</script>
+</body>
+</html>
